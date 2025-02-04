@@ -1,0 +1,34 @@
+---
+config:
+  layout: fixed
+---
+flowchart TB
+ subgraph Client["Client Layer"]
+        UI["OpenWebUI (User Interface)"]
+  end
+ subgraph App["Application Layer"]
+        API["API Gateway (Request Routing)"]
+        Agent["LLM Agent Service (Claude)"]
+        MCP["Model Context Protocol (Context & Tool Integration)"]
+  end
+ subgraph Data["Data Layer"]
+        NocoDB["NocoDB"]
+        Postgres[("PostgreSQL Database")]
+        S3[("Amazon S3 Storage")]
+        S3Browser["S3 Browser"]
+  end
+ subgraph Infra["Infrastructure Layer"]
+        Fargate["AWS Fargate (Container Runtime)"]
+        TF["Terraform (Infrastructure as Code)"]
+        Git["Git Repository (Version Control & CI/CD)"]
+  end
+    UI --> API
+    API --> Agent
+    Agent --> MCP
+    MCP -- Context/Tool Calls --> NocoDB
+    NocoDB --> Postgres
+    Agent -- Data Storage & Logging --> S3
+    S3 --> S3Browser
+    TF --> Fargate
+    Fargate --> MCP & Agent
+    Git --> TF
