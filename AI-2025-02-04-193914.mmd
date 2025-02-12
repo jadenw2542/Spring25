@@ -1,34 +1,52 @@
----
-config:
-  layout: fixed
----
 flowchart TB
- subgraph Client["Client Layer"]
+    %% Client Layer
+    subgraph Client["Client Layer"]
         UI["OpenWebUI (User Interface)"]
-  end
- subgraph App["Application Layer"]
-        API["API Gateway (Request Routing)"]
+        Auth["Cloudflare Access (Auth)"]
+    end
+
+    %% Application Layer
+    subgraph App["Application Layer"]
+        Pages["Cloudflare Pages (Static Hosting)"]
         Agent["LLM Agent Service (Claude)"]
-        MCP["Model Context Protocol (Context & Tool Integration)"]
-  end
- subgraph Data["Data Layer"]
+        MCP["Model Context Protocol"]
+    end
+
+    %% Data Layer
+    subgraph Data["Data Layer"]
         NocoDB["NocoDB"]
-        Postgres[("PostgreSQL Database")]
-        S3[("Amazon S3 Storage")]
-        S3Browser["S3 Browser"]
-  end
- subgraph Infra["Infrastructure Layer"]
-        Fargate["AWS Fargate (Container Runtime)"]
-        TF["Terraform (Infrastructure as Code)"]
-        Git["Git Repository (Version Control & CI/CD)"]
-  end
-    UI --> API
-    API --> Agent
+        R2[(Cloudflare R2 Object Storage)]
+        KV["Cloudflare KV (Caching)"]
+        Postgres[(PostgreSQL Database)]
+    end
+
+    %% Infrastructure Layer
+    subgraph Infra["Infrastructure Layer"]
+        API["Cloudflare API Gateway"]
+        Workers["Cloudflare Workers"]
+        TF["Terraform"]
+        Git["Git Repository"]
+    end
+
+    %% Security Layer
+    subgraph Security["Security Layer"]
+        WAF["Cloudflare WAF"]
+    end
+
+    %% Connections
+    UI --> Auth
+    Auth --> API
+    API --> WAF
+    WAF --> Workers
+    Workers --> Agent
     Agent --> MCP
-    MCP -- Context/Tool Calls --> NocoDB
+    Agent --> KV
+    MCP --> NocoDB
     NocoDB --> Postgres
-    Agent -- Data Storage & Logging --> S3
-    S3 --> S3Browser
-    TF --> Fargate
-    Fargate --> MCP & Agent
+    Workers --> R2
+    API --> KV
+    API --> Workers
+    TF --> Workers
+    TF --> Pages
+    TF --> API
     Git --> TF
